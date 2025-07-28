@@ -16,16 +16,19 @@ import {
   Receipt,
   ChevronRight
 } from "lucide-react";
+import AddExpense from "./AddExpense";
 
 // Enhanced Sidebar Component
 export default function Sidebar({ currentView, setCurrentView, setUser, user }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [showAddExpense, setShowAddExpense] = useState(false);
 
   const menuItems = [
     { icon: Home, label: "Dashboard", path: "dashboard" },
     { icon: Users, label: "Groups", path: "groups" },
     { icon: Activity, label: "Activity", path: "activity" },
+    { icon: DollarSign, label: "Budget", path: "budget" },
   ];
 
   const SidebarContent = () => (
@@ -56,7 +59,10 @@ export default function Sidebar({ currentView, setCurrentView, setUser, user }) 
 
       {/* Add Expense Button */}
       <div className="p-4">
-        <button className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center space-x-2 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+        <button 
+          onClick={() => setShowAddExpense(true)}
+          className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center space-x-2 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+        >
           <Plus className="w-5 h-5" />
           {!isCollapsed && <span>Add expense</span>}
         </button>
@@ -98,8 +104,18 @@ export default function Sidebar({ currentView, setCurrentView, setUser, user }) 
               <p className="text-teal-200 text-xs">{user?.email || 'user@example.com'}</p>
             </div>
           )}
-          
         </div>
+        {!isCollapsed && (
+          <button
+            onClick={() => {
+              setUser(null);
+              localStorage.removeItem('user');
+            }}
+            className="w-full mt-3 text-teal-200 hover:text-white text-sm py-2 px-3 rounded-lg hover:bg-teal-500/20 transition-colors text-center"
+          >
+            Logout
+          </button>
+        )}
       </div>
     </div>
   );
@@ -130,6 +146,13 @@ export default function Sidebar({ currentView, setCurrentView, setUser, user }) 
       >
         <Menu className="w-5 h-5" />
       </button>
+
+      {/* Add Expense Modal */}
+      <AddExpense
+        isOpen={showAddExpense}
+        onClose={() => setShowAddExpense(false)}
+        user={user}
+      />
     </>
   );
 }

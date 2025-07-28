@@ -1,14 +1,70 @@
 import { useState } from "react";
+import api from "../services/api";
 
 export default function LoginPage({ setUser }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
   const [isSignup, setIsSignup] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email || !password) return alert("Please enter both email and password.");
-    setUser({ email });
+    if (!email || !password) {
+      setError("Please enter both email and password.");
+      return;
+    }
+    
+    if (isSignup && !name) {
+      setError("Please enter your name.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      if (isSignup) {
+        // Register new user
+        const userData = {
+          name: name,
+          mail: email,
+          password: password
+        };
+        
+        const response = await api.auth.register(userData);
+        
+        // After successful registration, log them in
+        const loginResponse = await api.auth.login({
+          mail: email,
+          password: password
+        });
+        
+        setUser({
+          email: email,
+          name: name,
+          token: loginResponse.token,
+          id: response.id
+        });
+      } else {
+        // Login existing user
+        const response = await api.auth.login({
+          mail: email,
+          password: password
+        });
+        
+        setUser({
+          email: email,
+          token: response.token
+        });
+      }
+    } catch (error) {
+      console.error("Authentication error:", error);
+      setError(error.message || "Authentication failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGoogleSignIn = () => {
@@ -66,6 +122,29 @@ export default function LoginPage({ setUser }) {
             </div>
 
             <div className="space-y-6">
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
+                  {error}
+                </div>
+              )}
+
+              {isSignup && (
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                    Full Name
+                  </label>
+                  <input
+                    id="name"
+                    type="text"
+                    placeholder="Full Name"
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-teal-500 focus:border-teal-500 text-sm"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                  />
+                </div>
+              )}
+
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                   Email address
@@ -112,9 +191,10 @@ export default function LoginPage({ setUser }) {
                 <button
                   type="submit"
                   onClick={handleSubmit}
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
+                  disabled={loading}
+                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isSignup ? "Sign up" : "Log in"}
+                  {loading ? "Please wait..." : (isSignup ? "Sign up" : "Log in")}
                 </button>
               </div>
 

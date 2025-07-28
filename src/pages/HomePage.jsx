@@ -4,6 +4,7 @@ import Sidebar from "../components/Sidebar";
 import Dashboard from "../components/Dashboard.jsx";
 import Groups from "../components/Groups";
 import Activity from "../components/Activity";
+import Budget from "../components/Budget";
 
 export default function HomePage({ user, setUser }) {
   const [currentView, setCurrentView] = useState('dashboard');
@@ -13,9 +14,11 @@ export default function HomePage({ user, setUser }) {
       case 'dashboard':
         return <Dashboard user={user} />;
       case 'groups':
-        return <Groups />;
+        return <Groups user={user} />;
       case 'activity':
-        return <Activity />;
+        return <Activity user={user} />;
+      case 'budget':
+        return <Budget user={user} />;
       default:
         return <Dashboard user={user} />;
     }
