@@ -5,29 +5,62 @@ import {
   ChevronRight 
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import api from "../services/api";
 
 export default function Groups() {
   const navigate = useNavigate();
 
-  const [groups, setGroups] = useState([
-    { name: 'Trip to Vegas', members: 5, youOwe: 125.50, youAreOwed: 75.25, color: 'from-purple-500 to-purple-600' },
-    { name: 'House Expenses', members: 3, youOwe: 89.75, youAreOwed: 156.30, color: 'from-blue-500 to-blue-600' },
-    { name: 'Office Lunch', members: 8, youOwe: 23.40, youAreOwed: 45.80, color: 'from-green-500 to-green-600' },
-    { name: 'Weekend Getaway', members: 4, youOwe: 0, youAreOwed: 234.60, color: 'from-orange-500 to-orange-600' }
-  ]);
-
+  const [groups, setGroups] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
+  const [members, setMembers] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleCreateGroup = () => {
-    if (newGroupName.trim()) {
-      setGroups([
-        ...groups,
-        { name: newGroupName, members: 1, youOwe: 0, youAreOwed: 0, color: 'from-gray-500 to-gray-600' }
-      ]);
+  const handleCreateGroup = async () => {
+    if (!newGroupName.trim()) {
+      setError("Please enter a group name.");
+      return;
+    }
+
+    if (!members.trim()) {
+      setError("Please enter member emails separated by commas.");
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const memberEmails = members.split(',').map(email => email.trim()).filter(email => email);
+      
+      const groupData = {
+        groupName: newGroupName,
+        members: memberEmails
+      };
+
+      const response = await api.group.createGroup(groupData);
+      
+      // Add the new group to the local state (you might want to fetch all groups instead)
+      const newGroup = {
+        id: response.groupId,
+        name: newGroupName,
+        members: memberEmails.length + 1, // +1 for current user
+        youOwe: 0,
+        youAreOwed: 0,
+        color: `from-${['purple', 'blue', 'green', 'orange', 'red', 'indigo'][Math.floor(Math.random() * 6)]}-500 to-${['purple', 'blue', 'green', 'orange', 'red', 'indigo'][Math.floor(Math.random() * 6)]}-600`
+      };
+      
+      setGroups([...groups, newGroup]);
       setNewGroupName('');
+      setMembers('');
       setShowModal(false);
+    } catch (error) {
+      console.error("Error creating group:", error);
+      setError(error.message || "Failed to create group. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -105,19 +138,49 @@ export default function Groups() {
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
           <div className="bg-white p-6 rounded-lg w-96 space-y-4 shadow-xl">
             <h2 className="text-lg font-semibold text-gray-900">Create New Group</h2>
+            
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-3 py-2 rounded-md text-sm">
+                {error}
+              </div>
+            )}
+            
             <input
               type="text"
               value={newGroupName}
               onChange={(e) => setNewGroupName(e.target.value)}
               placeholder="Enter group name"
               className="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              disabled={loading}
             />
+            
+            <textarea
+              value={members}
+              onChange={(e) => setMembers(e.target.value)}
+              placeholder="Enter member emails separated by commas (e.g., john@email.com, jane@email.com)"
+              className="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 h-20 resize-none"
+              disabled={loading}
+            />
+            
             <div className="flex justify-end space-x-3">
-              <button onClick={() => setShowModal(false)} className="text-sm text-gray-500 hover:underline">
+              <button 
+                onClick={() => {
+                  setShowModal(false);
+                  setError('');
+                  setNewGroupName('');
+                  setMembers('');
+                }} 
+                className="text-sm text-gray-500 hover:underline"
+                disabled={loading}
+              >
                 Cancel
               </button>
-              <button onClick={handleCreateGroup} className="bg-teal-600 text-white px-4 py-2 rounded-md text-sm hover:bg-teal-700">
-                Create
+              <button 
+                onClick={handleCreateGroup} 
+                className="bg-teal-600 text-white px-4 py-2 rounded-md text-sm hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={loading}
+              >
+                {loading ? "Creating..." : "Create"}
               </button>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Home, 
   Users, 
@@ -16,21 +16,43 @@ import {
   Receipt,
   ChevronRight
 } from "lucide-react";
+import api from "../services/api";
 
 export default function Dashboard({ user }) {
-  const allExpenses = [
-    { title: "Dinner at Restaurant", user: "John", time: "2 hours ago", amount: "₹45.67", owed: "₹15.22", type: "expense" },
-    { title: "Grocery Shopping", user: "Sarah", time: "5 hours ago", amount: "₹87.34", owed: "₹29.11", type: "expense" },
-    { title: "Movie Tickets", user: "Mike", time: "1 day ago", amount: "₹36.00", owed: "₹12.00", type: "expense" },
-    { title: "Coffee & Snacks", user: "You", time: "2 days ago", amount: "₹18.50", owed: "settled", type: "settlement" }
-  ];
-
+  const [expenses, setExpenses] = useState([]);
+  const [budgetSummary, setBudgetSummary] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const filteredExpenses = allExpenses.filter(item =>
-    item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.time.toLowerCase().includes(searchTerm.toLowerCase())
+  useEffect(() => {
+    fetchDashboardData();
+  }, [user]);
+
+  const fetchDashboardData = async () => {
+    if (!user?.id) return;
+    
+    setLoading(true);
+    try {
+      // Note: Since we don't have a specific dashboard API, we'll use budget summary
+      // In a real implementation, you might want to create a dashboard endpoint
+      const summary = await api.budget.getBudgetSummary(user.id);
+      setBudgetSummary(summary);
+      
+      // For expenses, we would need group IDs. For now, showing empty state
+      setExpenses([]);
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+      setError("Failed to load dashboard data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredExpenses = expenses.filter(item =>
+    item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.user?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.time?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
